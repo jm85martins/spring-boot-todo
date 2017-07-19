@@ -83,14 +83,14 @@ public class TodoListControllerTest {
 
     @Test
     public void getUserTodoList() throws Exception {
-        mockMvc.perform(get("/" + dummyUserId + "/todo-list"))
+        mockMvc.perform(get("/" + dummyUserId + "/todo-list?page=0&size=10"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(contentType))
-                .andExpect(jsonPath("$._embedded.todoListResourceList", hasSize(2)))
-                .andExpect(jsonPath("$._embedded.todoListResourceList[0].content.id", is(this.todoList.get(0).getId())))
-                .andExpect(jsonPath("$._embedded.todoListResourceList[0].content.name", is(this.todoList.get(0).getName())))
-                .andExpect(jsonPath("$._embedded.todoListResourceList[1].content.id", is(this.todoList.get(1).getId())))
-                .andExpect(jsonPath("$._embedded.todoListResourceList[1].content.name", is(this.todoList.get(1).getName())));
+                .andExpect(jsonPath("$._embedded.todoListList", hasSize(2)))
+                .andExpect(jsonPath("$._embedded.todoListList[0].id", is(this.todoList.get(0).getId())))
+                .andExpect(jsonPath("$._embedded.todoListList[0].name", is(this.todoList.get(0).getName())))
+                .andExpect(jsonPath("$._embedded.todoListList[1].id", is(this.todoList.get(1).getId())))
+                .andExpect(jsonPath("$._embedded.todoListList[1].name", is(this.todoList.get(1).getName())));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class TodoListControllerTest {
                 + this.todoList.get(0).getId()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(contentType))
-                .andExpect(jsonPath("$.content.id", is(this.todoList.get(0).getId())))
+                .andExpect(jsonPath("$.id", is(this.todoList.get(0).getId())))
         ;
     }
 
@@ -117,7 +117,7 @@ public class TodoListControllerTest {
                 .contentType(contentType))
                 .andExpect(status().isOk())
                 //.andExpect(redirectedUrlPattern("http://*/12345678/todo-list/*"));
-                .andExpect(jsonPath("$.content.name", is(todoList.getName())));
+                .andExpect(jsonPath("$.name", is(todoList.getName())));
     }
 
     protected String json(Object o) throws IOException {

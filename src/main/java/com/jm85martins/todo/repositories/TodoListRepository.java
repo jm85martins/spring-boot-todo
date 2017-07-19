@@ -1,6 +1,8 @@
 package com.jm85martins.todo.repositories;
 
 import com.jm85martins.todo.entities.TodoList;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
@@ -11,5 +13,5 @@ import java.util.Collection;
  */
 @Repository
 public interface TodoListRepository extends MongoRepository<TodoList,String> {
-    Collection<TodoList> findByUserId(String userId);
+    Page<TodoList> findByUserId(String userId, Pageable pageable);
 }
