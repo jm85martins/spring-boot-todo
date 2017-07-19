@@ -1,24 +1,23 @@
 package com.jm85martins.todo.controllers;
 
-import com.jm85martins.todo.controllers.resources.TodoListResource;
+import com.jm85martins.todo.controllers.resources.TodoListResourceAssembler;
 import com.jm85martins.todo.entities.TodoList;
 import com.jm85martins.todo.repositories.TodoListRepository;
 import com.jm85martins.todo.utils.ErrorObj;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.hateoas.Resources;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Created by jorgemartins on 30/06/2017.
@@ -30,24 +29,26 @@ public class TodoListController {
 
     private TodoListRepository todoListRepository;
 
+    private TodoListResourceAssembler todoListResourceAssembler;
+
     @Autowired
-    TodoListController(TodoListRepository todoListRepository) {
+    TodoListController(TodoListRepository todoListRepository, TodoListResourceAssembler todoListResourceAssembler) {
         this.todoListRepository = todoListRepository;
+        this.todoListResourceAssembler = todoListResourceAssembler;
     }
 
     @RequestMapping(method = RequestMethod.GET)
-    public ResponseEntity<Resources<TodoListResource>> getMyTodoLists(@PathVariable String userId) {
+    public ResponseEntity<PagedResources<TodoList>> getMyTodoLists(@PathVariable String userId,
+                                                                           Pageable pageable, PagedResourcesAssembler assembler) {
         logger.info("Getting todo list for user {}", userId);
 
-        List<TodoListResource> todoListResources = this.todoListRepository
-                .findByUserId(userId).stream().map(TodoListResource::new)
-                .collect(Collectors.toList());
+        Page<TodoList> listPage = this.todoListRepository.findByUserId(userId, pageable);
 
-        return ResponseEntity.ok(new Resources<>(todoListResources));
+        return ResponseEntity.ok(assembler.toResource(listPage, todoListResourceAssembler));
     }
 
     @RequestMapping(path = "/{listId}", method = RequestMethod.GET)
-    public ResponseEntity<TodoListResource> getTodoList(@PathVariable String userId, @PathVariable String listId) {
+    public ResponseEntity<Resource> getTodoList(@PathVariable String userId, @PathVariable String listId) {
         logger.info("Getting todo for user {} and todo list {}", userId, listId);
 
         Optional<TodoList> todoList = this.todoListRepository.findById(listId);
@@ -55,23 +56,22 @@ public class TodoListController {
         if (!todoList.isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(new TodoListResource(todoList.get()));
+
+        return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList.get()));
     }
 
     @RequestMapping(method = RequestMethod.POST)
-    public ResponseEntity<TodoListResource> newTodoList(@PathVariable String userId, @RequestBody TodoList todoList) {
+    public ResponseEntity<Resource> newTodoList(@PathVariable String userId, @RequestBody TodoList todoList) {
         logger.info("Creating todo for user {} with name {}", userId, todoList.getName());
 
         todoList.setUserId(userId);
         todoList = this.todoListRepository.insert(todoList);
 
-        TodoListResource todoResource = new TodoListResource(todoList);
-
-        return ResponseEntity.ok(todoResource);
+        return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList));
     }
 
     @RequestMapping(path = "/{listId}", method = RequestMethod.PUT)
-    public ResponseEntity<TodoListResource> updateTodoList(@PathVariable String userId, @PathVariable String listId,
+    public ResponseEntity<Resource> updateTodoList(@PathVariable String userId, @PathVariable String listId,
                                                            @RequestBody TodoList todoList) {
         logger.info("Updating todo for user {} with id {}", userId, listId);
 
@@ -80,7 +80,7 @@ public class TodoListController {
         if (managedList.isPresent()) {
             todoList.setUserId(userId);
             todoList = this.todoListRepository.save(todoList);
-            return ResponseEntity.ok(new TodoListResource(todoList));
+            return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList));
         } else {
             logger.error("Unable to update the Todo List. Todo List with id {} not found.", listId);
             return new ResponseEntity(
