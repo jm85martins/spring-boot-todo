@@ -39,7 +39,7 @@ public class TodoListController {
 
     @RequestMapping(method = RequestMethod.GET)
     public ResponseEntity<PagedResources<TodoList>> getMyTodoLists(@PathVariable String userId,
-                                                                           Pageable pageable, PagedResourcesAssembler assembler) {
+                                                                   Pageable pageable, PagedResourcesAssembler assembler) {
         logger.info("Getting todo list for user {}", userId);
 
         Page<TodoList> listPage = this.todoListRepository.findByUserId(userId, pageable);
@@ -51,10 +51,15 @@ public class TodoListController {
     public ResponseEntity<Resource> getTodoList(@PathVariable String userId, @PathVariable String listId) {
         logger.info("Getting todo for user {} and todo list {}", userId, listId);
 
-        Optional<TodoList> todoList = this.todoListRepository.findById(listId);
+        Optional<TodoList> todoList = this.todoListRepository.findByIdAndUserId(listId, userId);
 
         if (!todoList.isPresent()) {
-            return ResponseEntity.notFound().build();
+            logger.error("Unable to find the Todo List. Todo List with id {} for user {} was not found.", listId, userId);
+            return new ResponseEntity(
+                    ErrorObj.builder()
+                            .userMessage("Unable to find the Todo List. Todo List with id ".concat(listId).concat("not found."))
+                            .build(),
+                    HttpStatus.NOT_FOUND);
         }
 
         return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList.get()));
@@ -78,8 +83,10 @@ public class TodoListController {
         Optional<TodoList> managedList = this.todoListRepository.findById(listId);
 
         if (managedList.isPresent()) {
-            todoList.setUserId(userId);
-            todoList = this.todoListRepository.save(todoList);
+            TodoList toUpdate = managedList.get();
+            toUpdate.setName(todoList.getName());
+            toUpdate.setItems(todoList.getItems());
+            todoList = this.todoListRepository.save(toUpdate);
             return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList));
         } else {
             logger.error("Unable to update the Todo List. Todo List with id {} not found.", listId);
