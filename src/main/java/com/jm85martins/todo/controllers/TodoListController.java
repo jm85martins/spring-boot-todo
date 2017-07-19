@@ -77,17 +77,17 @@ public class TodoListController {
 
     @RequestMapping(path = "/{listId}", method = RequestMethod.PUT)
     public ResponseEntity<Resource> updateTodoList(@PathVariable String userId, @PathVariable String listId,
-                                                           @RequestBody TodoList todoList) {
+                                                   @RequestBody TodoList todoList) {
         logger.info("Updating todo for user {} with id {}", userId, listId);
 
-        Optional<TodoList> managedList = this.todoListRepository.findById(listId);
+        Optional<TodoList> managedList = this.todoListRepository.findByIdAndUserId(listId, userId);
 
         if (managedList.isPresent()) {
             TodoList toUpdate = managedList.get();
             toUpdate.setName(todoList.getName());
             toUpdate.setItems(todoList.getItems());
-            todoList = this.todoListRepository.save(toUpdate);
-            return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList));
+            this.todoListRepository.save(toUpdate);
+            return ResponseEntity.ok(todoListResourceAssembler.toResource(toUpdate));
         } else {
             logger.error("Unable to update the Todo List. Todo List with id {} not found.", listId);
             return new ResponseEntity(
