@@ -1,13 +1,13 @@
 # spring-boot-todo
 A basic TODO List API with Java and Spring Boot
 
-##Purpose
+## Purpose
 This is a sandbox project for testing spring boot features
 
-##Setup
+## Setup
 To run the project you need mongodb to be running on 27017 default port
 
-##Dependencies usage
+## Dependencies usage
 - Spring boot
 - Spring hateoas
 - Spring data mongodb
