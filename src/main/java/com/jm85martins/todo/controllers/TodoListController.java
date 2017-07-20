@@ -2,8 +2,8 @@ package com.jm85martins.todo.controllers;
 
 import com.jm85martins.todo.controllers.resources.TodoListResourceAssembler;
 import com.jm85martins.todo.entities.TodoList;
+import com.jm85martins.todo.exceptions.TodoListNotFoundException;
 import com.jm85martins.todo.repositories.TodoListRepository;
-import com.jm85martins.todo.utils.ErrorObj;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +12,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resource;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.Optional;
 
@@ -54,12 +56,7 @@ public class TodoListController {
         Optional<TodoList> todoList = this.todoListRepository.findByIdAndUserId(listId, userId);
 
         if (!todoList.isPresent()) {
-            logger.error("Unable to find the Todo List. Todo List with id {} for user {} was not found.", listId, userId);
-            return new ResponseEntity(
-                    ErrorObj.builder()
-                            .userMessage("Unable to find the Todo List. Todo List with id ".concat(listId).concat("not found."))
-                            .build(),
-                    HttpStatus.NOT_FOUND);
+            throw new TodoListNotFoundException(listId, userId);
         }
 
         return ResponseEntity.ok(todoListResourceAssembler.toResource(todoList.get()));
@@ -89,12 +86,7 @@ public class TodoListController {
             this.todoListRepository.save(toUpdate);
             return ResponseEntity.ok(todoListResourceAssembler.toResource(toUpdate));
         } else {
-            logger.error("Unable to update the Todo List. Todo List with id {} not found.", listId);
-            return new ResponseEntity(
-                    ErrorObj.builder()
-                            .userMessage("Unable to update the Todo List. Todo List with id ".concat(listId).concat("not found."))
-                            .build(),
-                    HttpStatus.NOT_FOUND);
+            throw new TodoListNotFoundException(listId, userId);
         }
     }
 
